@@ -1,0 +1,37 @@
+{
+  "uid": "sad-paths-security",
+  "title": "Sad Paths & Security Events",
+  "tags": ["security", "devops", "tp12c"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Errores HTTP 401, 403 y 500",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(rate(app_requests_total{status=~\"401|403|500\"}[1m])) by (status, endpoint)", "legendFormat": "{{status}} - {{endpoint}}", "refId": "A"}]
+    },
+    {
+      "id": 2,
+      "title": "Reinicios de contenedores (15 min)",
+      "type": "gauge",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+      "targets": [{"expr": "sum(changes(kube_pod_container_status_restarts_total{namespace=\"devops-portfolio\"}[15m]))", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true}
+    },
+    {
+      "id": 3,
+      "title": "Errores de conexión a base de datos (1 h)",
+      "type": "table",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 9},
+      "targets": [{"expr": "increase(app_db_errors_total[1h])", "format": "table", "instant": true, "refId": "A"}],
+      "options": {"showHeader": true}
+    }
+  ]
+}
