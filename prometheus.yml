@@ -34,3 +34,6 @@ scrape_configs:
   - job_name: kube-state-metrics
     static_configs:
       - targets: ["kube-state-metrics.kube-system.svc.cluster.local:8080"]
+  - job_name: nginx-ingress
+    static_configs:
+      - targets: ["nginx-ingress-prometheus-service.nginx-ingress.svc.cluster.local:9113"]
