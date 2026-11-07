@@ -99,7 +99,7 @@ data:
             annotations:
               summary: Uso elevado de CPU
           - alert: HighErrorRate
-            expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+            expr: sum(rate(app_requests_total{status=~"5.."}[5m])) / sum(rate(app_requests_total[5m])) * 100 > 5
             for: 1m
             labels:
               severity: warning
