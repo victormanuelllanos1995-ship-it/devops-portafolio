@@ -296,6 +296,8 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboards
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-json
+              mountPath: /var/lib/grafana/dashboards
       volumes:
         - name: storage
           persistentVolumeClaim:
@@ -306,6 +308,9 @@ spec:
         - name: dashboards
           configMap:
             name: grafana-dashboards-provider
+        - name: dashboard-json
+          configMap:
+            name: grafana-security-dashboard
 ---
 apiVersion: v1
 kind: Service
