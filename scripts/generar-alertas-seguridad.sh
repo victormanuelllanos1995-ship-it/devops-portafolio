@@ -1,40 +1,45 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-NAMESPACE="devops-portfolio"
-HOST="devops-portfolio.local"
+NS="devops-portfolio"
 
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-INGRESS_PORT=$(kubectl get svc -n ingress-nginx ingress-nginx-controller \
-  -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}')
+echo "===== GENERANDO 50 ERRORES 404 Y 30 INTENTOS 401 ====="
 
-if [[ -z "$NODE_IP" || -z "$INGRESS_PORT" ]]; then
-  echo "ERROR: No se encontró el nodo o el NodePort de Ingress."
-  exit 1
-fi
+kubectl exec -i -n "$NS" deploy/backend -- python - <<'PY'
+import urllib.request
+import urllib.error
+import json
 
-URL="http://${NODE_IP}:${INGRESS_PORT}"
+for i in range(50):
+    req = urllib.request.Request(
+        f"http://localhost:5000/ruta-inexistente-{i}"
+    )
+    try:
+        urllib.request.urlopen(req)
+    except urllib.error.HTTPError as e:
+        print(f"404: {e.code}")
 
-echo "Destino: $URL"
-echo "Generando 50 solicitudes a rutas administrativas..."
+for i in range(30):
+    req = urllib.request.Request(
+        "http://localhost:5000/login",
+        data=json.dumps({
+            "username": "admin",
+            "password": "incorrecta"
+        }).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+    try:
+        urllib.request.urlopen(req)
+    except urllib.error.HTTPError as e:
+        print(f"Login {i+1}: HTTP {e.code}")
+PY
 
-for i in $(seq 1 50); do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -H "Host: $HOST" "$URL/admin-admin-$i")
-  echo "GET /admin-admin-$i -> $CODE"
-done
+echo "===== ESPERANDO EVALUACIÓN DE PROMETHEUS ====="
+sleep 45
 
-echo "Generando 30 intentos de autenticación fallidos..."
+echo "===== ALERTAS ACTIVAS ====="
+kubectl exec -n "$NS" deploy/backend -- python -c \
+"import urllib.request,json; d=json.load(urllib.request.urlopen('http://prometheus-service:9090/api/v1/alerts')); [print(a['labels'].get('alertname'),a['state']) for a in d['data']['alerts']]"
 
-for i in $(seq 1 30); do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -X POST -H "Host: $HOST" \
-    -H "Content-Type: application/json" \
-    -d '{"user":"admin","pass":"wrong"}' \
-    "$URL/api/v1/login")
-  echo "POST /api/v1/login -> $CODE"
-done
-
-echo "Verificando alertas de Prometheus..."
-curl -s "http://${NODE_IP}:30090/alerts"
-echo
+echo "===== PRUEBA FINALIZADA ====="
