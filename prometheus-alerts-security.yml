@@ -1,0 +1,70 @@
+groups:
+  - name: security-alerts
+    rules:
+      - alert: AppDown
+        expr: up{job="kubernetes-pods"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backend no disponible
+
+      - alert: HighCPU
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Uso elevado de CPU
+
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Tasa elevada de errores HTTP 5xx
+
+      - alert: DiskSpaceLow
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Poco espacio disponible en disco
+
+      - alert: IngressPicoErrores4xx5xx
+        expr: sum(rate(nginx_ingress_controller_requests{status=~"4..|5.."}[2m])) > 10
+        for: 1m
+        labels:
+          severity: critical
+          category: ciberseguridad
+        annotations:
+          summary: Pico de errores HTTP 4xx y 5xx en Ingress
+
+      - alert: PodReiniciosFrecuentesSeguridad
+        expr: increase(kube_pod_container_status_restarts_total{namespace="devops-portfolio"}[5m]) > 2
+        for: 1m
+        labels:
+          severity: warning
+          category: infraestructura
+        annotations:
+          summary: Reinicios frecuentes de contenedores
+
+      - alert: InvasionIntentosAuthFallidos
+        expr: sum(rate(app_requests_total{status="401", endpoint="/login"}[2m])) > 5
+        for: 30s
+        labels:
+          severity: critical
+          category: aplicacion
+        annotations:
+          summary: Exceso de intentos de autenticacion fallidos
+
+      - alert: PicoErroresConexionBaseDatos
+        expr: sum(rate(app_db_errors_total[2m])) > 2
+        for: 30s
+        labels:
+          severity: critical
+          category: persistencia
+        annotations:
+          summary: Pico de errores de conexion a base de datos
