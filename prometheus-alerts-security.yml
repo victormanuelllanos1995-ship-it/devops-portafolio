@@ -34,7 +34,7 @@ groups:
           summary: Poco espacio disponible en disco
 
       - alert: IngressPicoErrores4xx5xx
-        expr: sum(rate(nginx_ingress_controller_requests{status=~"4..|5.."}[2m])) > 10
+        expr: sum(increase(app_requests_total{status=~"4..|5.."}[2m])) > 10
         for: 1m
         labels:
           severity: critical
