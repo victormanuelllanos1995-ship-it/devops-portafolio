@@ -112,6 +112,20 @@ def health():
         'time': datetime.datetime.utcnow().isoformat()
     })
 
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json(silent=True) or {}
+    expected_user = os.getenv('APP_LOGIN_USER')
+    expected_password = os.getenv('APP_LOGIN_PASSWORD')
+
+    if (expected_user and expected_password
+            and data.get('username') == expected_user
+            and data.get('password') == expected_password):
+        return jsonify({'message': 'autenticacion exitosa'})
+
+    return jsonify({'error': 'credenciales invalidas'}), 401
+
 @app.route('/api/notes', methods=['GET'])
 def get_notes():
     conn = get_conn()

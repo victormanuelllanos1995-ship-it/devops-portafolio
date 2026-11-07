@@ -52,7 +52,7 @@ groups:
           summary: Reinicios frecuentes de contenedores
 
       - alert: InvasionIntentosAuthFallidos
-        expr: sum(rate(app_requests_total{status="401", endpoint="/login"}[2m])) > 5
+        expr: sum(increase(app_requests_total{status="401", endpoint="/login"}[2m])) > 5
         for: 30s
         labels:
           severity: critical
